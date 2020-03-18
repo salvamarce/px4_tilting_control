@@ -14,7 +14,7 @@
 #define MOTOR_SPEED_MAX 1100
 #define MOTOR_SPEED_HOVER 400 //to define
 #define MOTOR_TILT_MAX 1.0472
-#define ZERO_POS_Z 0.264
+#define Z_POS_OFFSET 0.264
 
 #include "Eigen/Dense"
 #include <iostream>

@@ -32,6 +32,7 @@ void TiltingMcControl::updateStates(const TiltingMcStates *stat){
 
 void TiltingMcControl::updatePosSetpoint(const TiltingMcPosSetpoint *setpoint){
     pos_setpoint= *setpoint;
+    pos_setpoint.point(2) -= Z_POS_OFFSET;
 }
 
 void TiltingMcControl::updateAttSetpoint(const TiltingMcAttSetpoint *setpoint){
@@ -49,6 +50,7 @@ void TiltingMcControl::updateTiltAngles(const Eigen::Matrix<float, 4, 1> angles)
 
 void TiltingMcControl::updateSetpoint(const TiltingMcPosSetpoint *setpoint_pos, const TiltingMcAttSetpoint *setpoint_att){
     pos_setpoint= *setpoint_pos;
+    pos_setpoint.point(2) -= Z_POS_OFFSET;
     att_setpoint= *setpoint_att;
 }
 
@@ -76,7 +78,7 @@ void TiltingMcControl::setOptGains(const float kh1, const float kh2, const float
 }
 
 void TiltingMcControl::zero_values(){
-    pos << 0.0, 0.0, ZERO_POS_Z;
+    pos << 0.0, 0.0, -Z_POS_OFFSET;
     vel = Eigen::VectorXf::Zero(3);
     acc = Eigen::VectorXf::Zero(3);
     RPY_att = Eigen::VectorXf::Zero(3);
@@ -89,12 +91,12 @@ void TiltingMcControl::zero_values(){
     Rbw = Eigen::Matrix3f::Zero();
     d_Rbw = Eigen::Matrix3f::Zero();
     opt_fcn = Eigen::VectorXf::Zero(8);
-    pos_setpoint.point << 0.0, 0.0, ZERO_POS_Z;
+    pos_setpoint.point << 0.0, 0.0, -Z_POS_OFFSET;
     pos_setpoint.vel = Eigen::VectorXf::Zero(3);
     pos_setpoint.acc = Eigen::VectorXf::Zero(3);
     pos_setpoint.jerk = Eigen::VectorXf::Zero(3);
-    att_setpoint.quat.vec() = Eigen::VectorXf::Zero(3);
-    att_setpoint.quat.w() = 1;
+    att_setpoint.quat.vec() << 0.0, 0.0, 0.705;
+    att_setpoint.quat.w() = 0.708;
     att_setpoint.vel = Eigen::VectorXf::Zero(3);
     att_setpoint.acc = Eigen::VectorXf::Zero(3);
     att_setpoint.jerk = Eigen::VectorXf::Zero(3);
@@ -123,28 +125,14 @@ Eigen::Vector3f TiltingMcControl::pos_controller_input(){
 
     output = Kp_pos*(pos_setpoint.point - pos) + Kd_pos*(pos_setpoint.vel - vel) + Kdd_pos*(pos_setpoint.acc - acc) + pos_setpoint.jerk;
 
-    //std::cout << "Errore pos: \n" << vel << std::endl;
-
+    //std::cout << "Err pos: \n" << pos_setpoint.point - pos << std::endl;
     return output;    
 }
 
 Eigen::Vector3f TiltingMcControl::att_controller_input(){
-    /*
-    Eigen::Vector3f output;
-    Eigen::Vector3f err;
-    Eigen::Quaternionf qd(RPYRotMat(RPY_att(0), RPY_att(1), RPY_att(2)));
-    Eigen::Matrix3f S;
-    Eigen::Vector3f vecD, vecB;
-
-    vecD(0)= qd.x();
-    vecD(1)= qd.y();
-    vecD(2)= qd.z();
-    vecB(0)= quat_att.x();
-    vecB(1)= quat_att.y();
-    vecB(2)= quat_att.z();
-    */
     Eigen::Matrix3f S;
     Eigen::Vector3f err, output;
+
     S << 0.0, -att_setpoint.quat.z(), att_setpoint.quat.y(),
          att_setpoint.quat.z(), 0.0, -att_setpoint.quat.x(),
          -att_setpoint.quat.y(), att_setpoint.quat.x(), 0.0;
@@ -350,7 +338,7 @@ void TiltingMcControl::Controller(const float dt){
         full_vect_in << ddd_pos, ddd_att;
         pinv_matrix_A = matrix_A.transpose()*(matrix_A*matrix_A.transpose()).inverse();
         full_vect_out = pinv_matrix_A*(full_vect_in - vector_B) + (Eigen::MatrixXf::Identity(8,8) - pinv_matrix_A*matrix_A)*opt_fcn;
-        //std::cout << "Vect out: \n" << full_vect_out << std::endl  ;  
+        //std::cout << "err pos: \n" << full_vect_in - vector_B << std::endl  ;  
         
         for (int i=0; i<4; i++)
                 d_motor_speed(i) = sign(full_vect_out(i))*sqrt(full_vect_out(i));
@@ -359,18 +347,25 @@ void TiltingMcControl::Controller(const float dt){
         d_motor_tilt << full_vect_out(4), full_vect_out(5), full_vect_out(6), full_vect_out(7);
         new_motor_speed = motor_speed + d_motor_speed*dt;
         new_motor_tilt = motor_tilt + d_motor_tilt*dt;
-
+        //std::cout << "--- D_speeds: \n" << d_motor_speed << std::endl;
+        
         for(int i=0; i<4; i++){
-            if(abs(new_motor_speed(i)) < MOTOR_SPEED_MIN )
+            if(abs(new_motor_speed(i)) < MOTOR_SPEED_MIN ){
                 new_motor_speed(i) = sign(new_motor_speed(i))*MOTOR_SPEED_MIN;
-            else if(abs(new_motor_speed(i)) > MOTOR_SPEED_MAX)
+                std::cout << "sono in min \n";
+            }
+            else if(abs(new_motor_speed(i)) > MOTOR_SPEED_MAX){
                 new_motor_speed(i) = sign(new_motor_speed(i))*MOTOR_SPEED_MAX;
+                std::cout << "sono in max \n";
+            }
+            else
+                std::cout << "sono in range \n";
 
             if(abs(new_motor_tilt(i)) > MOTOR_TILT_MAX)
                 new_motor_tilt(i) = sign(new_motor_tilt(i))*MOTOR_TILT_MAX;
         }
         
-        //std::cout << "Nuove vel: \n" << new_motor_tilt << std::endl;
+        //std::cout << "Nuove vel: \n" << new_motor_speed << std::endl;
         motor_speed = new_motor_speed;
         motor_tilt = Eigen::Matrix<float, 4, 1>::Zero();//new_motor_tilt;
         
