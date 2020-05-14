@@ -10,13 +10,32 @@
 //  double vel_max  Max/Cruise velocity
 //  double acc_max  Max acceleration
 //  double jerk_max Max jerk
-MotionProfile::MotionProfile(
-    double pos_i,
-    double pos_f,
-    double vel_max,
-    double acc_max,
-    double jerk_max 
-    )
+MotionProfile::MotionProfile(){
+    pi= 0;
+    pf= 0;
+    v_max = 0;
+    a_max = 0;
+    j_max = 0;    
+    s = 0;
+    a_max2 = 0;
+    va = 0;
+    sa = 0;
+    sv = 0;
+    tj = 0;
+    ta = 0;
+    tv = 0;
+    a_max_div_j_max = 0;
+    sqrt_v_max_div_j_max = 0;
+    t1 = t2 = t3 = t4 = t5 = t6 = t7 = 0;
+    a1 = v1 =  p1 = 0;
+    a2 = v2 =  p2 = 0;
+    v3 = p3 = 0; 
+    v4 = p4 = 0;
+    a5 = v5 =  p5 = 0;
+    a6 = v6 =  p6 = 0;
+}
+
+void MotionProfile::setParam(double pos_i,double pos_f,double vel_max,double acc_max,double jerk_max)
 {
     pi = pos_i;
     pf = pos_f;
@@ -32,16 +51,16 @@ MotionProfile::MotionProfile(
 
     s = pf-pi;
     a_max2 = a_max*a_max;
-    va = abs(a_max2/j_max);
-    sa = abs(2.0*va*a_max/j_max);
+    va = fabs(a_max2/j_max);
+    sa = fabs(2.0*va*a_max/j_max);
 
-    a_max_div_j_max = abs(a_max/j_max);
+    a_max_div_j_max = fabs(a_max/j_max);
     sqrt_v_max_div_j_max = sqrt(v_max/j_max);
 
     if (v_max*j_max < a_max2)
-        sv = abs(v_max*2.0*sqrt_v_max_div_j_max);
+        sv = fabs(v_max*2.0*sqrt_v_max_div_j_max);
     else
-        sv = abs(v_max*(v_max/a_max+a_max_div_j_max));
+        sv = fabs(v_max*(v_max/a_max+a_max_div_j_max));
 
     if (v_max <= va && s >= sa) {
         tj = sqrt_v_max_div_j_max;
@@ -119,13 +138,7 @@ MotionProfile::MotionProfile(
 //  - a     Acceleration at time t
 //  - j     Jerk at time t
 // Return: the computed position p at time t
-double MotionProfile::Compute(
-    double t, 
-    double &p, 
-    double &v, 
-    double &a, 
-    double &j
-    )
+void MotionProfile::Compute(double t, double &p, double &v, double &a, double &j)
 {
     double dt;
     if (t < 0) {
@@ -191,7 +204,6 @@ double MotionProfile::Compute(
             }
         }
     }
-    return p;
 }    
 
 

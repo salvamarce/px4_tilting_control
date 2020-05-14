@@ -229,10 +229,8 @@ include_directories(
 
 add_executable(px4_tarot_tilting_control src/px4_tarot_tilting_control.cpp)
 add_library(tilting_mc_control_lib src/tilting_mc_control.cpp)
-add_library(motion_profile_lib include/MotionProfile.cpp)
 #add_library(motion_profile_vec_lib include/MotionProfileVec.cpp)
 target_link_libraries(px4_tarot_tilting_control ${catkin_LIBRARIES})
 target_link_libraries(px4_tarot_tilting_control tilting_mc_control_lib)
-target_link_libraries(px4_tarot_tilting_control motion_profile_lib)
 #target_link_libraries(px4_tarot_tilting_control motion_profile_lib_vec)
 

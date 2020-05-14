@@ -228,8 +228,9 @@ int main (int argc, char** argv){
 
         }
         old_state = new_state;
-        ros::spinOnce();
+        
         r.sleep();
+        ros::spinOnce();
     }
     
     return(0);

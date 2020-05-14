@@ -11,20 +11,23 @@ class MotionProfile
     // MotionProfile
     // Generator of a smoth trajectory with an assigned max velocity, 
     // acceleration and jerk
+
+    MotionProfile();
+    
+    //Set trajectory parameters
     // Parameters:
     //  double pi       Initial position
     //  double pf       Final position
     //  double vel_max  Max/Cruise velocity
     //  double acc_max  Max acceleration
     //  double jerk_max Max jerk
-    MotionProfile(
-        double pos_i,
-        double pos_f,
-        double vel_max,
-        double acc_max,
-        double jerk_max 
-        );
-    
+    void setParam(
+        const double pos_i,
+        const double pos_f,
+        const double vel_max,
+        const double acc_max,
+        const double jerk_max);
+
     // Trajectory duration
     double Duration() { return t7; };
     
@@ -37,13 +40,7 @@ class MotionProfile
     //  - a     Acceleration at time t
     //  - j     Jerk at time t
     // Return: the computed position p at time t
-    double Compute(
-        double t, 
-        double &p, 
-        double &v, 
-        double &a, 
-        double &j
-        );
+    void Compute( double t, double &p, double &v, double &a, double &j);
     
     // Compute the trajectory at an assigned time
     // Input:
@@ -55,16 +52,9 @@ class MotionProfile
     //  - a     Acceleration at time t
     //  - j     Jerk at time t
     // Return: the computed position p at time t
-    double Compute(
-        double t, 
-        double t0, 
-        double &p, 
-        double &v, 
-        double &a, 
-        double &j
-        ) {
-            return Compute(t-t0,p,v,a,j);
-        };
+    void Compute(double t, double t0, double &p, double &v, double &a, double &j){
+        Compute(t-t0,p,v,a,j);
+    }
     
     private:
 
